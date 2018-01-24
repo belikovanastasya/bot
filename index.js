@@ -86,10 +86,10 @@ var options_training = {
    "parse_mode": "Markdown",
   "reply_markup": JSON.stringify({
     "keyboard": [
-      [{ text: "Fitness" }],
-      [{ text: "Kids" }],
-      [{ text: "Crossfit" }],
-      [{ text: "Fightzone" }],
+      [{ text: "fitness" }],
+      [{ text: "kids" }],
+      [{ text: "crossfit" }],
+      [{ text: "fightzone" }],
     ],
     "one_time_keyboard": true
   })
@@ -99,6 +99,7 @@ var options_training = {
     reply_markup: JSON.stringify({
       "parse_mode": "Markdown",
       "keyboard": [
+        [{ text: "изменить тип тренировки"}],
         [{ text: "понедельник"}],
         [{ text: "вторник"}],
         [{ text: "среда"}],
@@ -106,20 +107,27 @@ var options_training = {
         [{ text: "пятница"}],
         [{ text: "суббота"}],
         [{ text: "воскресенье"}]
+       
       ],
       "one_time_keyboard": true
     })
   };
 
-// Matches "/echo [whatever]"
+var dayly;
+
+
+
 bot.onText(/\/start/, (msg, match) => {
   const chatId = msg.chat.id;
+
   bot.sendMessage(chatId, "Выберите тип тренировки", options_training);
 
 }); 
 
 
-bot.onText(/Fitness/, (msg, match) => {
+bot.onText(/fitness|kids|crossfit|fightzone/, (msg, match) => {
+
+dayly = msg.text;
  const chatId = msg.chat.id;
   bot.sendMessage(chatId,'Выберите день недели', options_dayly );
  
@@ -133,23 +141,35 @@ bot.onText(/Fitness/, (msg, match) => {
 
 });*/
 
-bot.onText(/понедельник|вторник|среда|четверг|пятница|суббота|воскресенье/, (msg, match) => {
+bot.onText(/понедельник|вторник|среда|четверг|пятница|суббота|воскресенье|изменить тип тренировки/, (msg, match) => {
  
   const chatId = msg.chat.id;
+  var data = dayly;
   const key = msg.text; // the captured "whatever"
-  const message = getMessage(key);
+  if(key === 'изменить тип тренировки'){
+   bot.sendMessage(chatId, "Выберите тип тренировки", options_training);  
+  }
+  else{
+      const message = getMessage(key,data);
   if (message.exists) {
     for (var i = 0; i < message.length; i++) {
       var answerArray = [];
       let answer =
+       '💪' +
         message[i].time +
         "   " +
         message[i].workout +
         "    " +
         message[i].coach;
       bot.sendMessage(chatId, answer);
+
     }
+    setTimeout(function(){
+      bot.sendMessage(chatId, "Выберите день недели", options_dayly);
+    },1000)
   }
+  }
+
 });
 
 function isMessageExist(key) {
@@ -191,8 +211,9 @@ if (message.exists) {
   })
 }
 
-function getMessage(key) {
-  let data = sqlite.run("SELECT *  FROM crossfit WHERE `key` = ?", [key]);
+function getMessage(key,database) {
+  var f = "SELECT *  FROM " +  database + " WHERE `key` = ?"
+  let data = sqlite.run(f, [key]);
 
   if (data.length == 0) {
     return { exists: false };
